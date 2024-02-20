@@ -18,13 +18,21 @@ app = Flask(__name__)
 CORS(app)
 # app.config["CORS_HEADERS"] = "Content-Type"
 
+from mysql.connector import pooling
+
 db_config = {
     "user": MYSQL_USER,
     "password": MYSQL_PASSWORD,
     "host": MYSQL_HOST,
     "database": MYSQL_DATABASE_NAME,
     "autocommit": True,
+    "pool_name": "mysql_pool",
+    "pool_size": 5,  # Adjust the pool size to your needs
 }
+
+# Create a connection pool
+db_pool = pooling.MySQLConnectionPool(**db_config)
+
 
 
 @app.route("/")
@@ -39,9 +47,11 @@ def track_visit():
 
     try:
         # Connect to the database
-
-        db_connection = mysql.connector.connect(**db_config)
-        db_cursor = db_connection.cursor(buffered=True)
+        # Get connection from pool
+        db_connection = db_pool.get_connection()
+        db_cursor = db_connection.cursor()
+        # db_connection = mysql.connector.connect(**db_config)
+        # db_cursor = db_connection.cursor(buffered=True)
         # Insert every visit into the Users table
         db_cursor.execute(
             "INSERT INTO Visits (IPAddress, CreatedAt) VALUES (%s, %s)",
@@ -71,8 +81,11 @@ def save_language():
     current_time = datetime.now()
 
     try:
-        db_connection = mysql.connector.connect(**db_config)
-        db_cursor = db_connection.cursor(buffered=True)
+        # Get connection from pool
+        db_connection = db_pool.get_connection()
+        db_cursor = db_connection.cursor()
+        # db_connection = mysql.connector.connect(**db_config)
+        # db_cursor = db_connection.cursor(buffered=True)
 
         db_cursor.execute(
             "INSERT INTO LanguageSelections (IPAddress, SelectedLanguage, CreatedAt) VALUES (%s, %s, %s)",
