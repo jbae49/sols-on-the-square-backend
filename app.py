@@ -216,6 +216,33 @@ def track_promotion_click():
             db_connection.close()
 
 
+@app.route("/api/track-venmo-click", methods=["POST"])
+def track_venmo_click():
+    ip_address = request.remote_addr  # Get the IP address of the requester
+    timestamp = datetime.now()  # Get the current timestamp
+
+    try:
+        db_connection = db_pool.get_connection()
+        db_cursor = db_connection.cursor()
+        
+        db_cursor.execute(
+            "INSERT INTO VenmoClicks (timestamp, IPAddress) VALUES (%s, %s)",
+            (timestamp, ip_address),
+        )
+        db_connection.commit()
+
+        return jsonify({"message": "Venmo click tracked successfully."}), 200
+
+    except Exception as e:
+        if db_connection:
+            db_connection.rollback()
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        if db_connection and db_connection.is_connected():
+            db_cursor.close()
+            db_connection.close()
+
 
 @app.after_request
 def after_request_func(response):
