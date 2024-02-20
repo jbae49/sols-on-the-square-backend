@@ -39,38 +39,63 @@ db_pool = pooling.MySQLConnectionPool(**db_config)
 def index():
     return "Hello World from Flask Backend!"
 
-
 @app.route("/track-visit", methods=["POST"])
 def track_visit():
     ip_address = request.remote_addr  # Get the IP address of the visitor
-    current_time = datetime.now()  # Get the current time
+    session_start = datetime.now()  # Session start time
 
     try:
-        # Connect to the database
-        # Get connection from pool
         db_connection = db_pool.get_connection()
         db_cursor = db_connection.cursor()
-        # db_connection = mysql.connector.connect(**db_config)
-        # db_cursor = db_connection.cursor(buffered=True)
-        # Insert every visit into the Users table
         db_cursor.execute(
-            "INSERT INTO Visits (IPAddress, CreatedAt) VALUES (%s, %s)",
-            (ip_address, current_time),
+            "INSERT INTO PageSessions (IPAddress, sessionStart) VALUES (%s, %s)",
+            (ip_address, session_start),
         )
-        db_connection.commit()  # Ensure the transaction is committed to save the data
+        session_id = db_cursor.lastrowid  # Retrieve the last insert id
+        db_connection.commit()
 
-        return jsonify({"message": "Visit tracked and saved successfully."}), 200
+        return jsonify({"message": "Visit tracked successfully.", "sessionId": session_id}), 200
 
     except Exception as e:
-        # If an error occurs, rollback the transaction and return an error message
         db_connection.rollback()
         return jsonify({"error": str(e)}), 500
 
     finally:
-        # Close the database connection and cursor
         if db_connection.is_connected():
             db_cursor.close()
             db_connection.close()
+
+# @app.route("/track-visit", methods=["POST"])
+# def track_visit():
+#     ip_address = request.remote_addr  # Get the IP address of the visitor
+#     current_time = datetime.now()  # Get the current time
+
+#     try:
+#         # Connect to the database
+#         # Get connection from pool
+#         db_connection = db_pool.get_connection()
+#         db_cursor = db_connection.cursor()
+#         # db_connection = mysql.connector.connect(**db_config)
+#         # db_cursor = db_connection.cursor(buffered=True)
+#         # Insert every visit into the Users table
+#         db_cursor.execute(
+#             "INSERT INTO Visits (IPAddress, CreatedAt) VALUES (%s, %s)",
+#             (ip_address, current_time),
+#         )
+#         db_connection.commit()  # Ensure the transaction is committed to save the data
+
+#         return jsonify({"message": "Visit tracked and saved successfully."}), 200
+
+#     except Exception as e:
+#         # If an error occurs, rollback the transaction and return an error message
+#         db_connection.rollback()
+#         return jsonify({"error": str(e)}), 500
+
+#     finally:
+#         # Close the database connection and cursor
+#         if db_connection.is_connected():
+#             db_cursor.close()
+#             db_connection.close()
 
 
 @app.route("/api/save-language", methods=["POST"])
@@ -134,6 +159,62 @@ def add_to_cart():
         if db_connection and db_connection.is_connected():
             db_cursor.close()
             db_connection.close()
+
+@app.route("/update-session-end", methods=["POST"])
+def update_session_end():
+    data = request.json
+    session_id = data.get("sessionId")
+    session_end = datetime.now()  # Capture the current time as session end
+
+    try:
+        db_connection = db_pool.get_connection()
+        db_cursor = db_connection.cursor()
+        db_cursor.execute(
+            "UPDATE PageSessions SET sessionEnd = %s WHERE id = %s",
+            (session_end, session_id),
+        )
+        db_connection.commit()
+
+        return jsonify({"message": "Session end updated successfully."}), 200
+
+    except Exception as e:
+        if db_connection:
+            db_connection.rollback()
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        if db_connection and db_connection.is_connected():
+            db_cursor.close()
+            db_connection.close()
+
+
+
+@app.route("/api/track-promotion-click", methods=["POST"])
+def track_promotion_click():
+    data = request.json
+    event = data.get("event")
+    # Convert ISO 8601 format to MySQL DATETIME format
+    timestamp = datetime.strptime(data.get("timestamp"), "%Y-%m-%dT%H:%M:%S.%fZ")
+    ip_address = request.remote_addr
+
+    try:
+        db_connection = db_pool.get_connection()
+        db_cursor = db_connection.cursor()
+        db_cursor.execute(
+            "INSERT INTO PromotionClicks (event, timestamp, IPAddress) VALUES (%s, %s, %s)",
+            (event, timestamp, ip_address),
+        )
+        db_connection.commit()
+        return jsonify({"message": "Promotion click tracked successfully."}), 200
+    except Exception as e:
+        if db_connection:
+            db_connection.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if db_connection and db_connection.is_connected():
+            db_cursor.close()
+            db_connection.close()
+
 
 
 @app.after_request
