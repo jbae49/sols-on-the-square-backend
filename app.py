@@ -105,6 +105,37 @@ def save_language():
             db_connection.close()
 
 
+@app.route("/api/add-to-cart", methods=["POST"])
+def add_to_cart():
+    data = request.json
+    itemName = data.get("itemName")  # Ensure this matches your front-end request
+    quantity = data.get("quantity", 1)  # Default to 1 if not specified
+    current_time = datetime.now()
+    ip_address = request.remote_addr  # The IP address of the client making the request
+
+    try:
+        db_connection = db_pool.get_connection()
+        db_cursor = db_connection.cursor()
+
+        db_cursor.execute(
+            "INSERT INTO CartItems (IPAddress, itemName, quantity, createdAt) VALUES (%s, %s, %s, %s)",
+            (ip_address, itemName, quantity, current_time),
+        )
+        db_connection.commit()
+
+        return jsonify({"message": "Item added to cart successfully!"}), 200
+
+    except Exception as e:
+        if db_connection:
+            db_connection.rollback()
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        if db_connection and db_connection.is_connected():
+            db_cursor.close()
+            db_connection.close()
+
+
 @app.after_request
 def after_request_func(response):
     response.headers.add("Access-Control-Allow-Origin", "*")
