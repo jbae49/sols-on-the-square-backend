@@ -118,39 +118,6 @@ def track_visit():
             db_connection.close()
 
 
-# @app.route("/track-visit", methods=["POST"])
-# def track_visit():
-#     ip_address = request.remote_addr  # Get the IP address of the visitor
-#     current_time = datetime.now()  # Get the current time
-
-#     try:
-#         # Connect to the database
-#         # Get connection from pool
-#         db_connection = db_pool.get_connection()
-#         db_cursor = db_connection.cursor()
-#         # db_connection = mysql.connector.connect(**db_config)
-#         # db_cursor = db_connection.cursor(buffered=True)
-#         # Insert every visit into the Users table
-#         db_cursor.execute(
-#             "INSERT INTO Visits (IPAddress, CreatedAt) VALUES (%s, %s)",
-#             (ip_address, current_time),
-#         )
-#         db_connection.commit()  # Ensure the transaction is committed to save the data
-
-#         return jsonify({"message": "Visit tracked and saved successfully."}), 200
-
-#     except Exception as e:
-#         # If an error occurs, rollback the transaction and return an error message
-#         db_connection.rollback()
-#         return jsonify({"error": str(e)}), 500
-
-#     finally:
-#         # Close the database connection and cursor
-#         if db_connection.is_connected():
-#             db_cursor.close()
-#             db_connection.close()
-
-
 @app.route("/api/save-language", methods=["POST"])
 def save_language():
     data = request.json
