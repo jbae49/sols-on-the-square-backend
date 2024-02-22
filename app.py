@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import os
 import uuid
 from datetime import datetime
-
+from flask_sqlalchemy import SQLAlchemy
 
 load_dotenv(".env")
 MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")
@@ -17,6 +17,18 @@ MYSQL_DATABASE_NAME = os.getenv("MYSQL_DATABASE_NAME")
 app = Flask(__name__)
 CORS(app)
 # app.config["CORS_HEADERS"] = "Content-Type"
+from urllib.parse import quote_plus
+
+encoded_password = quote_plus(MYSQL_PASSWORD)
+app.config["SQLALCHEMY_DATABASE_URI"] = (
+    f"mysql+pymysql://{MYSQL_USER}:{encoded_password}@{MYSQL_HOST}/{MYSQL_DATABASE_NAME}"
+)
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+from flask_migrate import Migrate
+
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 from mysql.connector import pooling
 
@@ -34,10 +46,45 @@ db_config = {
 db_pool = pooling.MySQLConnectionPool(**db_config)
 
 
+class PageSessions(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    IPAddress = db.Column(db.String(255), nullable=False)
+    sessionStart = db.Column(db.DateTime, nullable=False)
+    sessionEnd = db.Column(db.DateTime)
+
+
+class LanguageSelections(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    IPAddress = db.Column(db.String(255), nullable=False)
+    SelectedLanguage = db.Column(db.String(50), nullable=False)
+    CreatedAt = db.Column(db.DateTime, nullable=False)
+
+
+class CartItems(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    IPAddress = db.Column(db.String(255), nullable=False)
+    itemName = db.Column(db.String(255), nullable=False)
+    quantity = db.Column(db.Integer, default=1)
+    createdAt = db.Column(db.DateTime, nullable=False)
+
+
+class PromotionClicks(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    event = db.Column(db.String(255), nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False)
+    IPAddress = db.Column(db.String(255), nullable=False)
+
+
+class VenmoClicks(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, nullable=False)
+    IPAddress = db.Column(db.String(255), nullable=False)
+
 
 @app.route("/")
 def index():
     return "Hello World from Flask Backend!"
+
 
 @app.route("/track-visit", methods=["POST"])
 def track_visit():
@@ -54,7 +101,12 @@ def track_visit():
         session_id = db_cursor.lastrowid  # Retrieve the last insert id
         db_connection.commit()
 
-        return jsonify({"message": "Visit tracked successfully.", "sessionId": session_id}), 200
+        return (
+            jsonify(
+                {"message": "Visit tracked successfully.", "sessionId": session_id}
+            ),
+            200,
+        )
 
     except Exception as e:
         db_connection.rollback()
@@ -64,6 +116,7 @@ def track_visit():
         if db_connection.is_connected():
             db_cursor.close()
             db_connection.close()
+
 
 # @app.route("/track-visit", methods=["POST"])
 # def track_visit():
@@ -160,6 +213,7 @@ def add_to_cart():
             db_cursor.close()
             db_connection.close()
 
+
 @app.route("/update-session-end", methods=["POST"])
 def update_session_end():
     data = request.json
@@ -186,7 +240,6 @@ def update_session_end():
         if db_connection and db_connection.is_connected():
             db_cursor.close()
             db_connection.close()
-
 
 
 @app.route("/api/track-promotion-click", methods=["POST"])
@@ -224,7 +277,7 @@ def track_venmo_click():
     try:
         db_connection = db_pool.get_connection()
         db_cursor = db_connection.cursor()
-        
+
         db_cursor.execute(
             "INSERT INTO VenmoClicks (timestamp, IPAddress) VALUES (%s, %s)",
             (timestamp, ip_address),
