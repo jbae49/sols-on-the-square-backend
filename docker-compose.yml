@@ -4,31 +4,13 @@ services:
   app:
     build: .
     ports:
-      - "5000:5000"
+      - "5001:5000" # Exposes the Flask app on port 5001 of the host
     environment:
       FLASK_APP: app.py
       FLASK_RUN_HOST: 0.0.0.0
-      MYSQL_HOST: ${MYSQL_HOST}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_DATABASE_NAME: ${MYSQL_DATABASE}
-    depends_on:
-      - mysql
+      MYSQL_HOST: ${MYSQL_HOST} # Uses the MYSQL_HOST value from .env
+      MYSQL_USER: ${MYSQL_USER} # Uses the MYSQL_USER value from .env
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD} # Uses the MYSQL_PASSWORD value from .env
+      MYSQL_DATABASE: ${MYSQL_DATABASE_NAME} # Uses the MYSQL_DATABASE value from .env
     volumes:
       - .:/app
-
-  mysql:
-    image: mysql:5.7
-    platform: linux/amd64
-    environment:
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
-    ports:
-      - "3306:3306"
-    volumes:
-      - mysql-data:/var/lib/mysql
-
-volumes:
-  mysql-data:
