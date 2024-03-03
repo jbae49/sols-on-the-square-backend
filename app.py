@@ -86,6 +86,18 @@ def index():
     return "Hello World from Flask Backend!"
 
 
+@app.route("/check-db-connection")
+def check_db_connection():
+    try:
+        db_connection = db_pool.get_connection()
+        if db_connection.is_connected():
+            return jsonify({"message": "Database connection successful!"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if db_connection.is_connected():
+            db_connection.close()
+
 @app.route("/track-visit", methods=["POST"])
 def track_visit():
     ip_address = request.remote_addr  # Get the IP address of the visitor
