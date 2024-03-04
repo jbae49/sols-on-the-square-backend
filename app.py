@@ -19,9 +19,18 @@ app = Flask(__name__)
 # app.config["CORS_HEADERS"] = "Content-Type"
 CORS(
     app,
-    resources={r"/api/*": {"origins": "https://api.solsonthesquare.online"}},
+    resources={
+        r"/api/*": {
+            "origins": [
+                "https://api.solsonthesquare.online",
+                "https://www.solsonthesquare.online",
+                "https://solsonthesquare.online",
+            ]
+        }
+    },
     supports_credentials=True,
 )
+
 from urllib.parse import quote_plus
 
 # encoded_password = quote_plus(MYSQL_PASSWORD)
