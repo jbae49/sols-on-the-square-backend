@@ -15,21 +15,21 @@ MYSQL_HOST = os.getenv("MYSQL_HOST")
 MYSQL_DATABASE_NAME = os.getenv("MYSQL_DATABASE_NAME")
 
 app = Flask(__name__)
-# CORS(app)
+CORS(app)
 # app.config["CORS_HEADERS"] = "Content-Type"
-CORS(
-    app,
-    resources={
-        r"/api/*": {
-            "origins": [
-                "https://api.solsonthesquare.online",
-                "https://www.solsonthesquare.online",
-                "https://solsonthesquare.online",
-            ]
-        }
-    },
-    supports_credentials=False,
-)
+# CORS(
+#     app,
+#     resources={
+#         r"/api/*": {
+#             "origins": [
+#                 "https://api.solsonthesquare.online",
+#                 "https://www.solsonthesquare.online",
+#                 "https://solsonthesquare.online",
+#             ]
+#         }
+#     },
+#     supports_credentials=False,
+# )
 
 from urllib.parse import quote_plus
 
