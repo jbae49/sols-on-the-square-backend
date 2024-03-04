@@ -28,7 +28,7 @@ CORS(
             ]
         }
     },
-    supports_credentials=True,
+    supports_credentials=False,
 )
 
 from urllib.parse import quote_plus
