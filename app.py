@@ -15,8 +15,13 @@ MYSQL_HOST = os.getenv("MYSQL_HOST")
 MYSQL_DATABASE_NAME = os.getenv("MYSQL_DATABASE_NAME")
 
 app = Flask(__name__)
-CORS(app)
+# CORS(app)
 # app.config["CORS_HEADERS"] = "Content-Type"
+CORS(
+    app,
+    resources={r"/api/*": {"origins": "https://api.solsonthesquare.online"}},
+    supports_credentials=True,
+)
 from urllib.parse import quote_plus
 
 # encoded_password = quote_plus(MYSQL_PASSWORD)
@@ -97,6 +102,7 @@ def check_db_connection():
     finally:
         if db_connection.is_connected():
             db_connection.close()
+
 
 @app.route("/track-visit", methods=["POST"])
 def track_visit():
@@ -285,4 +291,4 @@ def after_request_func(response):
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(debug=True)
